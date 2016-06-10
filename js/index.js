@@ -53,7 +53,7 @@ var RedisBlpopPoolClient = (function () {
         this._callbacks = [];
         this.onMessage = function (err, msg) {
             if (err) {
-                throw new Error("Redis error:", err);
+                throw new Error(err);
             }
             var index;
             if (msg && msg[0] && msg[1]) {
