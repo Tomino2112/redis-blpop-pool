@@ -1,21 +1,21 @@
 import * as merge from "merge";
 
-interface IRedisBlpopPoolOptions {
+export interface IRedisBlpopPoolOptions {
     maxClients?: number;
     clientOptions?: IRedisBlpopPoolClientOptions;
 }
 
-interface IRedisBlpopPool {
+export interface IRedisBlpopPool {
     registerKey: (key: string, callback: (value: any) => any) => void; // @todo what would be useful to return?
     removeKey: (key: string) => void;
 }
 
-interface IRedisBlpopPoolClientOptions {
+export interface IRedisBlpopPoolClientOptions {
     maxKeys?: number;
     timeout?: number;
 }
 
-interface IRedisBlpopPoolClient {
+export interface IRedisBlpopPoolClient {
     addKey: (key: string, callback: (value: any) => any) => void; // @todo what would be useful to return?
     removeKey: (key: string) => void;
 }
@@ -174,7 +174,7 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      */
     private onMessage: any = (err: any, msg: any) => {
         if (err){
-            throw new Error("Redis error:", err);
+            throw new Error(err);
         }
 
         let index: number;
