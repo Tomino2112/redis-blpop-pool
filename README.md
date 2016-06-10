@@ -6,7 +6,7 @@ In certain cases you might need to use extensively blpop command on very large n
 This package tries to solve this problem with compromising between the two.
 
 ## How it works
-When you start the pool, you will specify how many connections to use and how many keys to listening in each. Script them automatically creates new connections and allocate keys to whichever connection has some free space.
+When you start the pool, you will specify how many connections to use and how many keys to listen in each. Script then automatically creates new connections and allocate keys to whichever connection has some free space.
 
 New keys are added on blpop next-tick. That means you **should never** have blpop timeout 0.
 
@@ -15,13 +15,17 @@ Keys are automatically rotated to optimize the queue.
 * When blpop triggers on any key, that key is then moved to the end of the list. 
 
 ## Installation
-`npm install redis-blpop-pool`
+`npm install git://github.com/Tomino2112/redis-blpop-pool --save`
+
+When published to NPM:
+`npm install redis-blpop-pool --save`
 
 ## Usage
 Create blpop pool by running
 `var blpopPool = new RedisBlpopPool(redisConnection, params);`
 
 **redisConnection** is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://github.com/NodeRedis/node_redis) library connection.
+
 **parameters** 
 ```
 {
@@ -40,3 +44,6 @@ Create blpop pool by running
 * Support both redisConnection and redis connection params on init
 
 * Whatever other issues arise
+
+## License
+See `LICENSE` file
