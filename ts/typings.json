@@ -1,0 +1,5 @@
+{
+  "dependencies": {
+    "merge": "registry:npm/merge#1.2.0+20160128181220"
+  }
+}

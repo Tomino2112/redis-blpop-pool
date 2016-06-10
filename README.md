@@ -1,2 +1,42 @@
-# blpop_pool
-Pool for Redis BLPOP command
+# Pool for Redis BLPOP command
+
+## Why
+In certain cases you might need to use extensively blpop command on very large number of keys. You will end up with a dilemma of either using single connection with BLPOP blocking on XXXXX keys or creating XXXXX connections for each key.
+ 
+This package tries to solve this problem with compromising between the two.
+
+## How it works
+When you start the pool, you will specify how many connections to use and how many keys to listening in each. Script them automatically creates new connections and allocate keys to whichever connection has some free space.
+
+New keys are added on blpop next-tick. That means you **should never** have blpop timeout 0.
+
+Keys are automatically rotated to optimize the queue. 
+* If blpop hits timeout without any key triggering, first key of the list moves to the end of the list.
+* When blpop triggers on any key, that key is then moved to the end of the list. 
+
+## Installation
+`npm install redis-blpop-pool`
+
+## Usage
+Create blpop pool by running
+`var blpopPool = new RedisBlpopPool(redisConnection, params);`
+
+**redisConnection** is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://github.com/NodeRedis/node_redis) library connection.
+**parameters** 
+```
+{
+    maxClients: 100, // Maximum redis connections
+    clientOptions: {
+        maxKeys: 100, // Maximum keys in each blpop
+        timeout: 1 // Timeout of blpop
+    }
+}
+```
+
+## Roadmap
+* Cleaning up of unused connections
+* Add debug messages throughout
+* Better error handling
+* Support both redisConnection and redis connection params on init
+
+* Whatever other issues arise
