@@ -24,7 +24,8 @@ When published to NPM:
 Create blpop pool by running
 `var blpopPool = new RedisBlpopPool(redisConnection, params);`
 
-**redisConnection** is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://github.com/NodeRedis/node_redis) library connection.
+**redisConnection** 
+Is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://github.com/NodeRedis/node_redis) library connection.
 
 **parameters** 
 ```
@@ -39,6 +40,7 @@ Create blpop pool by running
 
 ## Roadmap
 * Cleaning up of unused connections
+* Test coverage + Travis
 * Add debug messages throughout
 * Better error handling
 * Support both redisConnection and redis connection params on init
