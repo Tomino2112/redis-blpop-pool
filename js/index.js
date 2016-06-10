@@ -1,12 +1,13 @@
 "use strict";
 var merge = require("merge");
 var RedisBlpopPool = (function () {
-    function RedisBlpopPool(ioRedisClient, options) {
+    function RedisBlpopPool(redisClient, options) {
+        if (options === void 0) { options = {}; }
         this._options = {
             maxClients: 100,
         };
         this._clients = [];
-        this._redis = ioRedisClient;
+        this._redis = redisClient;
         this._options = merge.recursive(true, this._options, options);
     }
     RedisBlpopPool.prototype.registerKey = function (key, callback) {
@@ -45,6 +46,7 @@ exports.RedisBlpopPool = RedisBlpopPool;
 var RedisBlpopPoolClient = (function () {
     function RedisBlpopPoolClient(ioRedisClient, options) {
         var _this = this;
+        if (options === void 0) { options = {}; }
         this._options = {
             maxKeys: 100,
             timeout: 1,

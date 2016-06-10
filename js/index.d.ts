@@ -18,7 +18,7 @@ export declare class RedisBlpopPool implements IRedisBlpopPool {
     private _redis;
     private _options;
     private _clients;
-    constructor(ioRedisClient: any, options: IRedisBlpopPoolOptions);
+    constructor(redisClient: any, options?: IRedisBlpopPoolOptions);
     registerKey(key: string, callback: (value: any) => any): void;
     removeKey(key: string): void;
     private createClient(clientOptions);

@@ -30,11 +30,11 @@ export class RedisBlpopPool implements IRedisBlpopPool {
     /**
      * Create the object with redis connection and options
      *
-     * @param ioRedisClient
+     * @param redisClient
      * @param options
      */
-    constructor(ioRedisClient: any, options: IRedisBlpopPoolOptions) {
-        this._redis = ioRedisClient;
+    constructor(redisClient: any, options: IRedisBlpopPoolOptions = {}) {
+        this._redis = redisClient;
         this._options = merge.recursive(true, this._options, options);
     }
 
@@ -48,15 +48,15 @@ export class RedisBlpopPool implements IRedisBlpopPool {
     public registerKey(key: string, callback: (value: any) => any): void {
         let keyAdded: boolean = false;
 
-        for (let i: number = 0; i < this._clients.length; i++){
-            if (this._clients[i].addKey(key, callback)){
+        for (let i: number = 0; i < this._clients.length; i++) {
+            if (this._clients[i].addKey(key, callback)) {
                 keyAdded = true;
                 break;
             }
         }
 
-        if (!keyAdded){
-            if (this._clients.length < this._options.maxClients){
+        if (!keyAdded) {
+            if (this._clients.length < this._options.maxClients) {
                 let newClient: IRedisBlpopPoolClient = this.createClient(this._options.clientOptions);
 
                 newClient.addKey(key, callback);
@@ -72,9 +72,9 @@ export class RedisBlpopPool implements IRedisBlpopPool {
      *
      * @param key
      */
-    public removeKey(key: string): void{
-        for (let i: number = 0; i < this._clients.length; i++){
-            if (this._clients[i].removeKey(key)){
+    public removeKey(key: string): void {
+        for (let i: number = 0; i < this._clients.length; i++) {
+            if (this._clients[i].removeKey(key)) {
                 break;
             }
         }
@@ -111,7 +111,7 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * @param ioRedisClient
      * @param options
      */
-    constructor(ioRedisClient: any, options: IRedisBlpopPoolClientOptions){
+    constructor(ioRedisClient: any, options: IRedisBlpopPoolClientOptions = {}) {
         this._r = ioRedisClient;
         this._options = merge.recursive(true, this._options, options);
 
@@ -126,7 +126,7 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * @returns {boolean}
      */
     public addKey(key: string, callback: (value: any) => any): boolean {
-        if (this._keys.length >= this._options.maxKeys){
+        if (this._keys.length >= this._options.maxKeys) {
             return false;
         }
 
@@ -145,7 +145,7 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      */
     public removeKey(key: string): boolean {
         let index: number = this._keys.indexOf(key);
-        if (index < 0){
+        if (index < 0) {
             return false;
         }
 
@@ -173,17 +173,17 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * @param msg
      */
     private onMessage: any = (err: any, msg: any) => {
-        if (err){
+        if (err) {
             throw new Error(err);
         }
 
         let index: number;
 
-        if (msg && msg[0] && msg[1]){
+        if (msg && msg[0] && msg[1]) {
             // Find key
             index = this._keys.indexOf(msg[0]);
 
-            if (index < 0){
+            if (index < 0) {
                 console.log("Warning: Got signal for key that doesnt exist anymore");
             } else {
                 // Run callback

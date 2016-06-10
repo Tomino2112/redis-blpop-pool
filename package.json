@@ -2,14 +2,14 @@
   "name": "redis-blpop-pool",
   "version": "0.0.1",
   "description": "Pool for Redis BLPOP command",
-  "main": "index.js",
-  "typings": "js/index",
+  "main": "./js/pool.js",
+  "typings": "./js/",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Tomino2112/blpop_pool.git"
+    "url": "git+https://github.com/Tomino2112/redis-blpop-pool.git"
   },
   "keywords": [
     "redis",
@@ -22,9 +22,9 @@
   "author": "Tomas Dostal <dostal.it@gmail.com> (http://tomasdostal.com)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Tomino2112/blpop_pool/issues"
+    "url": "https://github.com/Tomino2112/redis-blpop-pool/issues"
   },
-  "homepage": "https://github.com/Tomino2112/blpop_pool#readme",
+  "homepage": "https://github.com/Tomino2112/redis-blpop-pool#readme",
   "dependencies": {
     "merge": "^1.2.0"
   }
