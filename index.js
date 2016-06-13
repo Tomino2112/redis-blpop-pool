@@ -4,7 +4,7 @@ var RedisBlpopPool = (function () {
     function RedisBlpopPool(redisClient, options) {
         if (options === void 0) { options = {}; }
         this._options = {
-            maxClients: 100,
+            maxClients: 0,
         };
         this._clients = [];
         this._redis = redisClient;
@@ -19,7 +19,7 @@ var RedisBlpopPool = (function () {
             }
         }
         if (!keyAdded) {
-            if (this._clients.length < this._options.maxClients) {
+            if (this._clients.length < this._options.maxClients || this._options.maxClients === 0) {
                 var newClient = this.createClient(this._options.clientOptions);
                 newClient.addKey(key, callback);
             }
@@ -70,9 +70,9 @@ var RedisBlpopPoolClient = (function () {
         this._callbacks = [];
         this._messageCount = 0;
         this.onMessage = function (err, msg) {
-            _this._messageCount++;
             var index;
             if (msg && msg[0] && msg[1]) {
+                _this._messageCount++;
                 index = _this._keys.indexOf(msg[0]);
                 if (index < 0) {
                     console.log("Warning: Got signal for key that doesnt exist anymore");

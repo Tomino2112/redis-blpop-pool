@@ -33,7 +33,7 @@ export interface IRedisBlpopPoolClient {
 export class RedisBlpopPool implements IRedisBlpopPool {
     private _redis: any;
     private _options: IRedisBlpopPoolOptions = {
-        maxClients: 100,
+        maxClients: 0,
     };
     private _clients: IRedisBlpopPoolClient[] = [];
 
@@ -66,7 +66,7 @@ export class RedisBlpopPool implements IRedisBlpopPool {
         }
 
         if (!keyAdded) {
-            if (this._clients.length < this._options.maxClients) {
+            if (this._clients.length < this._options.maxClients || this._options.maxClients === 0) {
                 let newClient: IRedisBlpopPoolClient = this.createClient(this._options.clientOptions);
 
                 newClient.addKey(key, callback);
@@ -209,11 +209,11 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * @param msg
      */
     private onMessage: any = (err: any, msg: any) => {
-        this._messageCount++;
-
         let index: number;
 
         if (msg && msg[0] && msg[1]) {
+            this._messageCount++;
+
             // Find key
             index = this._keys.indexOf(msg[0]);
 

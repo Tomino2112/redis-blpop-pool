@@ -8,7 +8,7 @@ This package tries to solve this problem with compromising between the two.
 ## How it works
 When you start the pool, you will specify how many connections to use and how many keys to listen in each. Script then automatically creates new connections and allocate keys to whichever connection has some free space.
 
-New keys are added on blpop next-tick. That means you **should never** have blpop timeout 0.
+New keys are added on blpop next-tick. That means you **should never** have blpop timeout 0. The shorter the blpop timeout is, the sooner new keys get into the queue.
 
 Keys are automatically rotated to optimize the queue. 
 * If blpop hits timeout without any key triggering, first key of the list moves to the end of the list.
@@ -30,7 +30,7 @@ Is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://git
 **parameters** 
 ```
 {
-    maxClients: 100, // Maximum redis connections
+    maxClients: 0, // Maximum redis connections (0 = unlimited)
     clientOptions: {
         maxKeys: 100, // Maximum keys in each blpop
         timeout: 1 // Timeout of blpop
