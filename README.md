@@ -38,6 +38,14 @@ Is either [ioredis](https://github.com/luin/ioredis) or [node_redis](https://git
 }
 ```
 
+Add key to the pool
+
+```
+blpopPool.registerKey("hello:world", function(err, msg){
+    console.log(err, msg);
+});
+```
+
 ## Roadmap
 * Cleaning up of unused connections
 * Test coverage + Travis

@@ -10,6 +10,12 @@ export interface IRedisBlpopPool {
     removeKey: (key: string) => void;
 }
 
+export interface IRedisBlpopPoolStats {
+    options: IRedisBlpopPoolOptions;
+    clients: any[];
+    keys_count: number; // @todo Do we need this or client should do that?
+}
+
 export interface IRedisBlpopPoolClientOptions {
     maxKeys?: number;
     timeout?: number;
@@ -18,6 +24,9 @@ export interface IRedisBlpopPoolClientOptions {
 export interface IRedisBlpopPoolClient {
     addKey: (key: string, callback: (value: any) => any) => void; // @todo what would be useful to return?
     removeKey: (key: string) => void;
+
+    keys: string[];
+    messageCount: number;
 }
 
 export class RedisBlpopPool implements IRedisBlpopPool {
@@ -80,6 +89,25 @@ export class RedisBlpopPool implements IRedisBlpopPool {
         }
     }
 
+    public stats(): IRedisBlpopPoolStats {
+        let stats: IRedisBlpopPoolStats = {
+            options: this._options,
+            clients: [],
+            keys_count: 0,
+        };
+
+        for (let i: number = 0; i < this._clients.length; i++) {
+            stats.clients.push({
+                keys: this._clients[i].keys,
+                message_count: this._clients[i].messageCount,
+            });
+
+            stats.keys_count += this._clients[i].keys.length;
+        }
+
+        return stats;
+    }
+
     /**
      * Creates new client
      *
@@ -105,6 +133,8 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
     private _keys: string[] = [];
     private _callbacks: any[] = [];
 
+    private _messageCount: number = 0;
+
     /**
      * Create the object with connection and options
      *
@@ -117,6 +147,9 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
 
         this.startBlpop();
     }
+
+    public get keys(): string[] { return this._keys; }
+    public get messageCount(): number { return this._messageCount; }
 
     /**
      * Add key and callback to the list
@@ -170,12 +203,12 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * This function will process result of any message received and will call the callback that was saved.
      * Once message is processed, it rotates the keys and start new blpop
      *
+     * @todo Handle error better
+     *
      * @param msg
      */
     private onMessage: any = (err: any, msg: any) => {
-        if (err) {
-            throw new Error(err);
-        }
+        this._messageCount++;
 
         let index: number;
 
@@ -187,7 +220,12 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
                 console.log("Warning: Got signal for key that doesnt exist anymore");
             } else {
                 // Run callback
-                this._callbacks[index](msg[1]);
+                this._callbacks[index](err, msg[1]);
+            }
+        } else {
+            // Last resort - throw error
+            if (err) {
+                throw new Error(err);
             }
         }
 

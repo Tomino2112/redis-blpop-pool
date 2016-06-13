@@ -35,6 +35,21 @@ var RedisBlpopPool = (function () {
             }
         }
     };
+    RedisBlpopPool.prototype.stats = function () {
+        var stats = {
+            options: this._options,
+            clients: [],
+            keys_count: 0,
+        };
+        for (var i = 0; i < this._clients.length; i++) {
+            stats.clients.push({
+                keys: this._clients[i].keys,
+                message_count: this._clients[i].messageCount,
+            });
+            stats.keys_count += this._clients[i].keys.length;
+        }
+        return stats;
+    };
     RedisBlpopPool.prototype.createClient = function (clientOptions) {
         var client = new RedisBlpopPoolClient(this._redis.duplicate(), clientOptions);
         this._clients.push(client);
@@ -53,10 +68,9 @@ var RedisBlpopPoolClient = (function () {
         };
         this._keys = [];
         this._callbacks = [];
+        this._messageCount = 0;
         this.onMessage = function (err, msg) {
-            if (err) {
-                throw new Error(err);
-            }
+            _this._messageCount++;
             var index;
             if (msg && msg[0] && msg[1]) {
                 index = _this._keys.indexOf(msg[0]);
@@ -64,7 +78,12 @@ var RedisBlpopPoolClient = (function () {
                     console.log("Warning: Got signal for key that doesnt exist anymore");
                 }
                 else {
-                    _this._callbacks[index](msg[1]);
+                    _this._callbacks[index](err, msg[1]);
+                }
+            }
+            else {
+                if (err) {
+                    throw new Error(err);
                 }
             }
             _this.rotateKeys(index);
@@ -74,6 +93,16 @@ var RedisBlpopPoolClient = (function () {
         this._options = merge.recursive(true, this._options, options);
         this.startBlpop();
     }
+    Object.defineProperty(RedisBlpopPoolClient.prototype, "keys", {
+        get: function () { return this._keys; },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(RedisBlpopPoolClient.prototype, "messageCount", {
+        get: function () { return this._messageCount; },
+        enumerable: true,
+        configurable: true
+    });
     RedisBlpopPoolClient.prototype.addKey = function (key, callback) {
         if (this._keys.length >= this._options.maxKeys) {
             return false;
