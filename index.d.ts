@@ -5,6 +5,7 @@ export interface IRedisBlpopPoolOptions {
 export interface IRedisBlpopPool {
     registerKey: (key: string, callback: (value: any) => any) => void;
     removeKey: (key: string) => void;
+    stats: () => IRedisBlpopPoolStats;
 }
 export interface IRedisBlpopPoolStats {
     options: IRedisBlpopPoolOptions;
