@@ -3,7 +3,7 @@ export interface IRedisBlpopPoolOptions {
     clientOptions?: IRedisBlpopPoolClientOptions;
 }
 export interface IRedisBlpopPool {
-    registerKey: (key: string, callback: (value: any) => any) => void;
+    registerKey: (key: string, callback: (err: any, value: any) => any) => void;
     removeKey: (key: string) => void;
     stats: () => IRedisBlpopPoolStats;
 }
@@ -17,7 +17,7 @@ export interface IRedisBlpopPoolClientOptions {
     timeout?: number;
 }
 export interface IRedisBlpopPoolClient {
-    addKey: (key: string, callback: (value: any) => any) => void;
+    addKey: (key: string, callback: (err: any, value: any) => any) => void;
     removeKey: (key: string) => void;
     keys: string[];
     messageCount: number;
@@ -27,7 +27,7 @@ export declare class RedisBlpopPool implements IRedisBlpopPool {
     private _options;
     private _clients;
     constructor(redisClient: any, options?: IRedisBlpopPoolOptions);
-    registerKey(key: string, callback: (value: any) => any): void;
+    registerKey(key: string, callback: (err: any, value: any) => any): void;
     removeKey(key: string): void;
     stats(): IRedisBlpopPoolStats;
     private createClient(clientOptions);

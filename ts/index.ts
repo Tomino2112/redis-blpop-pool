@@ -6,7 +6,7 @@ export interface IRedisBlpopPoolOptions {
 }
 
 export interface IRedisBlpopPool {
-    registerKey: (key: string, callback: (value: any) => any) => void; // @todo what would be useful to return?
+    registerKey: (key: string, callback: (err: any, value: any) => any) => void; // @todo what would be useful to return?
     removeKey: (key: string) => void;
     stats: () => IRedisBlpopPoolStats;
 }
@@ -23,7 +23,7 @@ export interface IRedisBlpopPoolClientOptions {
 }
 
 export interface IRedisBlpopPoolClient {
-    addKey: (key: string, callback: (value: any) => any) => void; // @todo what would be useful to return?
+    addKey: (key: string, callback: (err: any, value: any) => any) => void; // @todo what would be useful to return?
     removeKey: (key: string) => void;
 
     keys: string[];
@@ -55,7 +55,7 @@ export class RedisBlpopPool implements IRedisBlpopPool {
      * @param key
      * @param callback
      */
-    public registerKey(key: string, callback: (value: any) => any): void {
+    public registerKey(key: string, callback: (err: any, value: any) => any): void {
         let keyAdded: boolean = false;
 
         for (let i: number = 0; i < this._clients.length; i++) {
@@ -159,7 +159,7 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * @param callback
      * @returns {boolean}
      */
-    public addKey(key: string, callback: (value: any) => any): boolean {
+    public addKey(key: string, callback: (err: any, value: any) => any): boolean {
         if (this._keys.length >= this._options.maxKeys) {
             return false;
         }
