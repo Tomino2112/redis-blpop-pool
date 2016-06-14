@@ -34,6 +34,10 @@ export class RedisBlpopPool implements IRedisBlpopPool {
     private _redis: any;
     private _options: IRedisBlpopPoolOptions = {
         maxClients: 0,
+        clientOptions: {
+            maxKeys: 100,
+            timeout: 1,
+        },
     };
     private _clients: IRedisBlpopPoolClient[] = [];
 
@@ -44,6 +48,10 @@ export class RedisBlpopPool implements IRedisBlpopPool {
      * @param options
      */
     constructor(redisClient: any, options: IRedisBlpopPoolOptions = {}) {
+        if (!redisClient){
+            throw new Error("Pool cannot be initialized without redis connection");
+        }
+
         this._redis = redisClient;
         this._options = merge.recursive(true, this._options, options);
     }
@@ -51,6 +59,8 @@ export class RedisBlpopPool implements IRedisBlpopPool {
     /**
      * Adds key to next available client, if no client is available it creates new one.
      * If max clients is reached it raises exception
+     *
+     * @todo Handle duplicate keys?
      *
      * @param key
      * @param callback

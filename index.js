@@ -5,8 +5,15 @@ var RedisBlpopPool = (function () {
         if (options === void 0) { options = {}; }
         this._options = {
             maxClients: 0,
+            clientOptions: {
+                maxKeys: 100,
+                timeout: 1,
+            },
         };
         this._clients = [];
+        if (!redisClient) {
+            throw new Error("Pool cannot be initialized without redis connection");
+        }
         this._redis = redisClient;
         this._options = merge.recursive(true, this._options, options);
     }

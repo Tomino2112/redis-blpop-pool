@@ -5,7 +5,8 @@
   "main": "./js/pool.js",
   "typings": "./js/",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha",
+    "coverage": "istanbul cover --include-all-sources node_modules/mocha/bin/_mocha -- -R spec --recursive ./test"
   },
   "repository": {
     "type": "git",
@@ -27,5 +28,12 @@
   "homepage": "https://github.com/Tomino2112/redis-blpop-pool#readme",
   "dependencies": {
     "merge": "^1.2.0"
+  },
+  "devDependencies": {
+    "fakeredis": "^1.0.3",
+    "mocha": "^2.5.3",
+    "should": "^9.0.2",
+    "should-sinon": "0.0.5",
+    "sinon": "^1.17.4"
   }
 }
