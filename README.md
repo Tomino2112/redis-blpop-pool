@@ -1,5 +1,7 @@
 # Pool for Redis BLPOP command
 
+[![Build Status](https://travis-ci.org/Tomino2112/redis-blpop-pool.svg?branch=master)](https://travis-ci.org/Tomino2112/redis-blpop-pool)
+
 ## Why
 In certain cases you might need to use extensively blpop command on very large number of keys. You will end up with a dilemma of either using single connection with BLPOP blocking on XXXXX keys or creating XXXXX connections for each key.
  
