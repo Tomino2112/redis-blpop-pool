@@ -50,7 +50,6 @@ blpopPool.registerKey("hello:world", function(err, msg){
 
 ## Roadmap
 * Cleaning up of unused connections
-* Test coverage + Travis
 * Add debug messages throughout
 * Better error handling
 * Support both redisConnection and redis connection params on init
