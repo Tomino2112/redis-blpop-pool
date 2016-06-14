@@ -146,6 +146,8 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
 
     private _messageCount: number = 0;
 
+    private _running: boolean = false;
+
     /**
      * Create the object with connection and options
      *
@@ -155,8 +157,6 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
     constructor(ioRedisClient: any, options: IRedisBlpopPoolClientOptions = {}) {
         this._r = ioRedisClient;
         this._options = merge.recursive(true, this._options, options);
-
-        this.startBlpop();
     }
 
     public get keys(): string[] { return this._keys; }
@@ -178,6 +178,12 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
         this._keys.push(key);
         this._callbacks.push(callback);
 
+        if (!this._running) {
+            this.startBlpop();
+        }
+
+        this._running = true;
+
         return true;
     }
 
@@ -198,6 +204,10 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
         this._keys.splice(index, 1);
         this._callbacks.splice(index, 1);
 
+        if (!this._keys.length){
+            this._running = false;
+        }
+
         return true;
     }
 
@@ -206,6 +216,10 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * Blpop is using timeout to make sure that all keys added during runtime will be registered asap
      */
     private startBlpop(): void {
+        if (!this._running){
+            return;
+        }
+
         this._r.blpop(this._keys, this._options.timeout, this.onMessage);
     }
 

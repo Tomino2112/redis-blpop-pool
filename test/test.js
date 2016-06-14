@@ -2,7 +2,7 @@ var should = require("should");
 var blpopPool = require("../index").RedisBlpopPool;
 var redis = require("fakeredis").createClient();
 var sinon = require("sinon");
-require('should-sinon');
+require("should-sinon");
 
 describe("Testing pool", function(){
     it("Should throw exception while creating without redis connection", function(){
@@ -377,8 +377,22 @@ describe("Testing pool client", function(){
     });
 
     // @todo finish testcase
-    it ("Should log warning when receiving message for unknown key", function(){});
+    it ("Should log warning when receiving message for unknown key", function(){
+        true.should.be.false();
+    });
 
     // @todo finish testcase
-    it ("Should throw error if received redis error and have no callback", function(){});
+    it ("Should throw error if received redis error and have no callback", function(){
+        true.should.be.false();
+    });
+
+    // @todo finish testcase
+    it ("Should not start blpop if there are no keys in the queue", function(){
+        true.should.be.false();
+    });
+
+    // @todo finish testcase
+    it ("Should resume blpop when keys are added", function(){
+        true.should.be.false();
+    });
 });

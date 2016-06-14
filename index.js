@@ -76,6 +76,7 @@ var RedisBlpopPoolClient = (function () {
         this._keys = [];
         this._callbacks = [];
         this._messageCount = 0;
+        this._running = false;
         this.onMessage = function (err, msg) {
             var index;
             if (msg && msg[0] && msg[1]) {
@@ -98,7 +99,6 @@ var RedisBlpopPoolClient = (function () {
         };
         this._r = ioRedisClient;
         this._options = merge.recursive(true, this._options, options);
-        this.startBlpop();
     }
     Object.defineProperty(RedisBlpopPoolClient.prototype, "keys", {
         get: function () { return this._keys; },
@@ -116,6 +116,10 @@ var RedisBlpopPoolClient = (function () {
         }
         this._keys.push(key);
         this._callbacks.push(callback);
+        if (!this._running) {
+            this.startBlpop();
+        }
+        this._running = true;
         return true;
     };
     RedisBlpopPoolClient.prototype.removeKey = function (key) {
@@ -125,9 +129,15 @@ var RedisBlpopPoolClient = (function () {
         }
         this._keys.splice(index, 1);
         this._callbacks.splice(index, 1);
+        if (!this._keys.length) {
+            this._running = false;
+        }
         return true;
     };
     RedisBlpopPoolClient.prototype.startBlpop = function () {
+        if (!this._running) {
+            return;
+        }
         this._r.blpop(this._keys, this._options.timeout, this.onMessage);
     };
     RedisBlpopPoolClient.prototype.rotateKeys = function (index) {
