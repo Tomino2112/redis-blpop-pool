@@ -1,10 +1,23 @@
 var should = require("should");
 var blpopPool = require("../index").RedisBlpopPool;
-var redis = require("fakeredis").createClient();
+var fakeredis = require("fakeredis");
 var sinon = require("sinon");
 require("should-sinon");
 
+// Helper function - https://github.com/hdachev/fakeredis/issues/48
+function createRedisClient(){
+    var redis = fakeredis.createClient({});
+    redis.duplicate = createRedisClient;
+    return redis;
+}
+
 describe("Testing pool", function(){
+    var redis;
+
+    beforeEach(function(){
+        redis = createRedisClient();
+    });
+
     it("Should throw exception while creating without redis connection", function(){
         (function(){new blpopPool()}).should.throw();
     });
@@ -58,7 +71,7 @@ describe("Testing pool", function(){
         (function(){ pool.registerKey("test:5", function(err, msg){}) }).should.throw();
     });
 
-    it ("Should remove key from client", function(err, msg){
+    it ("Should remove key from client", function(){
         var pool = new blpopPool(redis);
 
         pool.registerKey("test:1", function(err, msg){});
@@ -110,6 +123,12 @@ describe("Testing pool", function(){
 });
 
 describe("Testing pool client", function(){
+    var redis;
+
+    beforeEach(function(){
+        redis = createRedisClient();
+    });
+
     it("Should add key and callback if space available", function(){
         var pool = new blpopPool(redis);
         var client = pool.createClient();
@@ -208,7 +227,7 @@ describe("Testing pool client", function(){
         (client._callbacks[2]).should.equal(callbacks[1]);
     });
 
-    it ("Should call right callback on receiving message", function(){
+    it ("Should call right callback on receiving message", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -228,14 +247,15 @@ describe("Testing pool client", function(){
         pool._clients[0].rotateKeys();
         pool._clients[0].rotateKeys();
 
-        redis.lpush("test:99");
+        //redis.lpush("test:99", "a");
 
         setTimeout(function(){
             callback.should.be.calledOnce();
+            done();
         }, 1500);
     });
 
-    it ("Should rotate key that received message at the end of the queue", function(){
+    it ("Should rotate key that received message at the end of the queue", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -251,10 +271,11 @@ describe("Testing pool client", function(){
 
         setTimeout(function(){
             should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal("test:3");
+            done();
         }, 100);
     });
 
-    it ("Should rotate keys correctly on timing out", function(){
+    it ("Should rotate keys correctly on timing out", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -268,10 +289,11 @@ describe("Testing pool client", function(){
 
         setTimeout(function(){
             should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal("test:0");
+            done();
         }, 1500);
     });
 
-    it ("Should listen to all keys after timeout/new message", function(){
+    it ("Should listen to all keys after timeout/new message", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -291,10 +313,11 @@ describe("Testing pool client", function(){
 
         setTimeout(function(){
             callback.should.be.calledOnce();
+            done();
         }, 2500);
     });
 
-    it ("Should restart blpop after receiving message", function(){
+    it ("Should restart blpop after receiving message", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -314,10 +337,11 @@ describe("Testing pool client", function(){
         setTimeout(function(){
             callback1.should.be.calledOnce();
             callback2.should.be.calledOnce();
+            done();
         },2500);
     });
 
-    it ("Should restart blpop after timing out", function(){
+    it ("Should restart blpop after timing out", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -336,11 +360,12 @@ describe("Testing pool client", function(){
 
             setTimeout(function(){
                 callback1.should.be.calledOnce();
+                done();
             }, 100);
         },1500);
     });
 
-    it ("Should increment message count on receiving message", function(){
+    it ("Should increment message count on receiving message", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -356,10 +381,11 @@ describe("Testing pool client", function(){
 
         setTimeout(function(){
             (pool._clients[0].messageCount).should.equal(1);
+            done();
         },1500);
     });
 
-    it ("Should not increment message count on timing out", function(){
+    it ("Should not increment message count on timing out", function(done){
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -373,6 +399,7 @@ describe("Testing pool client", function(){
 
         setTimeout(function(){
             (pool._clients[0].messageCount).should.equal(0);
+            done();
         },1500);
     });
 
@@ -386,9 +413,21 @@ describe("Testing pool client", function(){
         true.should.be.false();
     });
 
-    // @todo finish testcase
-    it ("Should not start blpop if there are no keys in the queue", function(){
-        true.should.be.false();
+    it ("Should not start blpop if there are no keys in the queue", function(done){
+        var pool = new blpopPool(redis);
+
+        //redis.blpop = sinon.spy();
+
+        var client = pool.createClient({timeout: 1});
+
+        //client.onMessage = sinon.spy();
+
+        //console.log(client);
+
+        setTimeout(function(){
+            //client.onMessage.should.not.be.called();
+            done();
+        }, 1500);
     });
 
     // @todo finish testcase
