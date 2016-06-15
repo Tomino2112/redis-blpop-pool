@@ -49,6 +49,11 @@ blpopPool.registerKey("hello:world", function(err, msg){
 });
 ```
 
+## Testing 
+Testing uses mocha package. Local redis must be installed as `fakeredis` package cannot handle tests for this package.
+
+Test using: `npm test`
+
 ## Roadmap
 * Cleaning up of unused connections
 * Add debug messages throughout
