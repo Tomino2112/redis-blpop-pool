@@ -179,10 +179,9 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
         this._callbacks.push(callback);
 
         if (!this._running) {
+            this._running = true;
             this.startBlpop();
         }
-
-        this._running = true;
 
         return true;
     }

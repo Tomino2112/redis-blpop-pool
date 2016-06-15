@@ -30,7 +30,7 @@
     "merge": "^1.2.0"
   },
   "devDependencies": {
-    "fakeredis": "^1.0.3",
+    "ioredis": "^2.0.1",
     "mocha": "^2.5.3",
     "should": "^9.0.2",
     "should-sinon": "0.0.5",

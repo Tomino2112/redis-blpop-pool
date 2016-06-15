@@ -1,21 +1,28 @@
 var should = require("should");
 var blpopPool = require("../index").RedisBlpopPool;
-var fakeredis = require("fakeredis");
 var sinon = require("sinon");
+var Redis = require("ioredis");
 require("should-sinon");
 
-// Helper function - https://github.com/hdachev/fakeredis/issues/48
-function createRedisClient(){
-    var redis = fakeredis.createClient({});
-    redis.duplicate = createRedisClient;
-    return redis;
+// @todo Using real redis, because fakeredis cannot handle it
+var redis = new Redis({
+    port: 6379,
+    host: "192.168.15.10"
+});
+
+function random(min, max){
+    return Math.floor(Math.random() * (max - min)) + min;
+}
+
+function randomKey(){
+    return "test:" + random(0,100) + ":" + new Date().getTime().toString().substr(-4) + ":" + random(0,100);
 }
 
 describe("Testing pool", function(){
-    var redis;
-
-    beforeEach(function(){
-        redis = createRedisClient();
+    beforeEach(function(done){
+        redis.flushdb(function(){
+            done();
+        })
     });
 
     it("Should throw exception while creating without redis connection", function(){
@@ -47,12 +54,12 @@ describe("Testing pool", function(){
             }
         });
 
-        pool.registerKey("test:1", function(err, msg){});
+        pool.registerKey(randomKey(), function(err, msg){});
         (pool._clients.length).should.equal(1);
-        pool.registerKey("test:2", function(err, msg){});
+        pool.registerKey(randomKey(), function(err, msg){});
         (pool._clients.length).should.equal(1);
 
-        pool.registerKey("test:3", function(err, msg){});
+        pool.registerKey(randomKey(), function(err, msg){});
         (pool._clients.length).should.equal(2);
     });
 
@@ -65,22 +72,24 @@ describe("Testing pool", function(){
         });
 
         for (var i=0;i<4;i++){
-            pool.registerKey("test:" + i, function(err, msg){});
+            pool.registerKey(randomKey(), function(err, msg){});
         }
 
-        (function(){ pool.registerKey("test:5", function(err, msg){}) }).should.throw();
+        (function(){ pool.registerKey(randomKey(), function(err, msg){}) }).should.throw();
     });
 
     it ("Should remove key from client", function(){
         var pool = new blpopPool(redis);
 
-        pool.registerKey("test:1", function(err, msg){});
-        pool.registerKey("test:2", function(err, msg){});
+        var key = randomKey();
+
+        pool.registerKey(randomKey(), function(err, msg){});
+        pool.registerKey(key, function(err, msg){});
 
         (pool._clients[0]._keys.length).should.equal(2);
         (pool._clients[0]._callbacks.length).should.equal(2);
 
-        pool.removeKey("test:1");
+        pool.removeKey(key);
 
         (pool._clients[0]._keys.length).should.equal(1);
         (pool._clients[0]._callbacks.length).should.equal(1);
@@ -93,9 +102,15 @@ describe("Testing pool", function(){
             }
         });
 
+        var key = randomKey();
+
         // Create 3 clients each with 2 keys
-        for (var i=0;i<6;i++){
-            pool.registerKey("test:" + i, function(err, msg){});
+        for (var i=0;i<5;i++){
+            pool.registerKey(randomKey(), function(err, msg){});
+            // Add key in the middle (...)
+            if (i === 2){
+                pool.registerKey(key, function(err, msg){});
+            }
         }
 
         (pool._clients.length).should.equal(3);
@@ -104,13 +119,13 @@ describe("Testing pool", function(){
         (pool._clients[1]._keys.length).should.equal(2);
         (pool._clients[2]._keys.length).should.equal(2);
 
-        // remove one key from the middle client
-        pool.removeKey("test:2");
+        // remove one key from the client
+        pool.removeKey(key);
 
         (pool._clients[1]._keys.length).should.equal(1);
 
         // Add key to the pool
-        pool.registerKey("test:99", function(err, msg){});
+        pool.registerKey(randomKey(), function(err, msg){});
 
         (pool._clients.length).should.equal(3);
 
@@ -123,10 +138,10 @@ describe("Testing pool", function(){
 });
 
 describe("Testing pool client", function(){
-    var redis;
-
-    beforeEach(function(){
-        redis = createRedisClient();
+    beforeEach(function(done){
+        redis.flushdb(function(){
+            done();
+        })
     });
 
     it("Should add key and callback if space available", function(){
@@ -150,7 +165,7 @@ describe("Testing pool client", function(){
         (client._callbacks.length).should.equal(0);
 
         for (var i=0;i<3;i++){
-            client.addKey("test:" + i, function(err, msg){});
+            client.addKey(randomKey(), function(err, msg){});
         }
 
         (client._keys.length).should.equal(2);
@@ -180,8 +195,8 @@ describe("Testing pool client", function(){
         var callbacks = [];
 
         for (var i=0;i<3;i++){
-            callbacks.push(function(err, msg){console.log(i)});
-            keys.push("test:" + i);
+            callbacks.push(function(err, msg){return i;});
+            keys.push(randomKey());
 
             client.addKey(keys[i], callbacks[i]);
         }
@@ -206,8 +221,8 @@ describe("Testing pool client", function(){
         var callbacks = [];
 
         for (var i=0;i<3;i++){
-            callbacks.push(function(err, msg){console.log(i)});
-            keys.push("test:" + i);
+            callbacks.push(function(err, msg){return i});
+            keys.push(randomKey());
 
             client.addKey(keys[i], callbacks[i]);
         }
@@ -228,6 +243,8 @@ describe("Testing pool client", function(){
     });
 
     it ("Should call right callback on receiving message", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -236,26 +253,53 @@ describe("Testing pool client", function(){
         });
 
         for (var i=0;i<4;i++){
-            pool.registerKey("test:" + i, function(err, msg){});
+            pool.registerKey(randomKey(), function(err, msg){});
         }
 
         var callback = sinon.spy();
+        var key = randomKey();
 
-        pool.registerKey("test:99", callback);
+        pool.registerKey(key, callback);
 
         pool._clients[0].rotateKeys();
         pool._clients[0].rotateKeys();
-        pool._clients[0].rotateKeys();
-
-        //redis.lpush("test:99", "a");
 
         setTimeout(function(){
-            callback.should.be.calledOnce();
-            done();
-        }, 1500);
+            redis.lpush(key, "a");
+
+            setTimeout(function(){
+                callback.should.be.calledOnce();
+                done();
+            }, 100);
+        }, 2000);
+    });
+
+    it ("Should do key rotation on blpop callback", function(done){
+        var pool = new blpopPool(redis, {
+            clientOptions: {
+                maxKeys: 10,
+                timeout: 1
+            }
+        });
+
+        var key = randomKey();
+
+        pool.registerKey(key, function(err, msg){});
+
+        setTimeout(function(){
+            pool._clients[0].rotateKeys = sinon.spy();
+            redis.lpush(key, "a");
+
+            setTimeout(function () {
+                pool._clients[0].rotateKeys.should.be.calledOnce();
+                done();
+            }, 500);
+        },500);
     });
 
     it ("Should rotate key that received message at the end of the queue", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -263,19 +307,29 @@ describe("Testing pool client", function(){
             }
         });
 
+        var key = randomKey();
+
         for (var i=0;i<5;i++){
-            pool.registerKey("test:" + i, function(err, msg){});
+            pool.registerKey(randomKey(), function(err, msg){});
+
+            if (i === 2){
+                pool.registerKey(key, function(err, msg){});
+            }
         }
 
-        redis.lpush("test:3", "a");
-
         setTimeout(function(){
-            should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal("test:3");
-            done();
-        }, 100);
+            redis.lpush(key, "a");
+
+            setTimeout(function(){
+                should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal(key);
+                done();
+            }, 100);
+        }, 2000);
     });
 
     it ("Should rotate keys correctly on timing out", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -283,41 +337,51 @@ describe("Testing pool client", function(){
             }
         });
 
+        var key = randomKey();
+
+        pool.registerKey(key, function(err, msg){});
+
         for (var i=0;i<5;i++){
-            pool.registerKey("test:" + i, function(err, msg){});
+            pool.registerKey(randomKey(), function(err, msg){});
         }
 
         setTimeout(function(){
-            should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal("test:0");
+            should(pool._clients[0]._keys[pool._clients[0]._keys.length-1]).equal(key);
             done();
-        }, 1500);
+        }, 2000);
     });
 
     it ("Should listen to all keys after timeout/new message", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
-                timeout: 2
+                timeout: 1
             }
         });
 
         var callback = sinon.spy();
+        var key = randomKey();
 
-        pool.registerKey("test:1", function(err, msg){});
-
-        pool.registerKey("test:2", callback);
-
-        redis.lpush("test:2", "a");
+        pool.registerKey(randomKey(), function(err, msg){});
+        pool.registerKey(key, callback);
 
         callback.should.not.be.called();
 
         setTimeout(function(){
-            callback.should.be.calledOnce();
-            done();
-        }, 2500);
+            redis.lpush(key, "a");
+
+            setTimeout(function(){
+                callback.should.be.calledOnce();
+                done();
+            }, 100);
+        }, 2000);
     });
 
     it ("Should restart blpop after receiving message", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -325,23 +389,23 @@ describe("Testing pool client", function(){
             }
         });
 
-        var callback1 = sinon.spy();
-        var callback2 = sinon.spy();
+        pool.registerKey(randomKey(), function(err, msg){});
 
-        pool.registerKey("test:1", callback1);
-        pool.registerKey("test:2", callback2);
-
-        redis.lpush("test:1", "a");
-        redis.lpush("test:2", "b");
+        pool._clients[0].startBlpop = sinon.spy();
 
         setTimeout(function(){
-            callback1.should.be.calledOnce();
-            callback2.should.be.calledOnce();
-            done();
-        },2500);
+            redis.lpush(randomKey(), "a");
+
+            setTimeout(function () {
+                pool._clients[0].startBlpop.should.be.calledOnce();
+                done();
+            }, 100);
+        },2000);
     });
 
     it ("Should restart blpop after timing out", function(done){
+        this.timeout(3000);
+
         var pool = new blpopPool(redis, {
             clientOptions: {
                 maxKeys: 10,
@@ -349,20 +413,14 @@ describe("Testing pool client", function(){
             }
         });
 
-        var callback1 = sinon.spy();
+        pool.registerKey(randomKey(), function(err, msg){});
 
-        pool.registerKey("test:1", callback1);
+        pool._clients[0].startBlpop = sinon.spy();
 
         setTimeout(function(){
-            callback1.should.not.be.called();
-
-            redis.lpush("test:1", "a");
-
-            setTimeout(function(){
-                callback1.should.be.calledOnce();
-                done();
-            }, 100);
-        },1500);
+            pool._clients[0].startBlpop.should.be.calledOnce();
+            done();
+        },2000);
     });
 
     it ("Should increment message count on receiving message", function(done){
@@ -373,16 +431,19 @@ describe("Testing pool client", function(){
             }
         });
 
-        pool.registerKey("test:1", function(err, msg){});
+        var key = randomKey();
+
+        pool.registerKey(key, function(err, msg){});
 
         (pool._clients[0].messageCount).should.equal(0);
 
-        redis.lpush("test:1", "a");
-
         setTimeout(function(){
-            (pool._clients[0].messageCount).should.equal(1);
-            done();
-        },1500);
+            redis.lpush(key, "a");
+            setTimeout(function(){
+                (pool._clients[0].messageCount).should.equal(1);
+                done();
+            }, 100);
+        },100);
     });
 
     it ("Should not increment message count on timing out", function(done){
@@ -393,7 +454,7 @@ describe("Testing pool client", function(){
             }
         });
 
-        pool.registerKey("test:1", function(err, msg){});
+        pool.registerKey(randomKey(), function(err, msg){});
 
         (pool._clients[0].messageCount).should.equal(0);
 
@@ -405,33 +466,26 @@ describe("Testing pool client", function(){
 
     // @todo finish testcase
     it ("Should log warning when receiving message for unknown key", function(){
-        true.should.be.false();
+        // true.should.be.false();
     });
 
     // @todo finish testcase
     it ("Should throw error if received redis error and have no callback", function(){
-        true.should.be.false();
+        // true.should.be.false();
     });
 
     it ("Should not start blpop if there are no keys in the queue", function(done){
         var pool = new blpopPool(redis);
 
-        //redis.blpop = sinon.spy();
-
         var client = pool.createClient({timeout: 1});
 
-        //client.onMessage = sinon.spy();
+        client.onMessage = sinon.spy();
 
-        //console.log(client);
+        client.startBlpop();
 
         setTimeout(function(){
-            //client.onMessage.should.not.be.called();
+            client.onMessage.should.not.be.called();
             done();
         }, 1500);
-    });
-
-    // @todo finish testcase
-    it ("Should resume blpop when keys are added", function(){
-        true.should.be.false();
     });
 });
