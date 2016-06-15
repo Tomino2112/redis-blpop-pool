@@ -7,7 +7,7 @@ require("should-sinon");
 // @todo Using real redis, because fakeredis cannot handle it
 var redis = new Redis({
     port: 6379,
-    host: "192.168.15.10"
+    host: "127.0.0.1"
 });
 
 function random(min, max){
