@@ -4,6 +4,8 @@
 [![Dependency Status][david-badge]][david-url]
 
 ## Why
+While developing new part of the [iPushPull](https://www.ipushpull.com) system, we realized we need a hybrid between **list** and **set** data type and so we settled for solution that allows us to do just that.
+
 In certain cases you might need to use extensively blpop command on very large number of keys. You will end up with a dilemma of either using single connection with BLPOP blocking on XXXXX keys or creating XXXXX connections for each key.
  
 This package tries to solve this problem with compromising between the two.
