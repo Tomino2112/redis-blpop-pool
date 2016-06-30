@@ -129,6 +129,12 @@ var RedisBlpopPoolClient = (function () {
         }
         this._keys.splice(index, 1);
         this._callbacks.splice(index, 1);
+        if (typeof this._keys === "undefined") {
+            this._keys = [];
+        }
+        if (typeof this._callbacks === "undefined") {
+            this._callbacks = [];
+        }
         if (!this._keys.length) {
             this._running = false;
         }
