@@ -274,6 +274,11 @@ class RedisBlpopPoolClient implements IRedisBlpopPoolClient {
      * Rotates keys to make sure all keys get their turn. Blpop is processing keys in order, so we need to make sure they rotate
      */
     private rotateKeys(index: number = 0): void {
+        // No need to rotate if we have only one key (or none to that matter)
+        if (this._keys.length < 1){
+            return;
+        }
+
         // Take first key and move it to the end
         this._keys.push(this._keys.splice(index, 1)[0]);
         this._callbacks.push(this._callbacks.splice(index, 1)[0]);

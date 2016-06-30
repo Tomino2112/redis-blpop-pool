@@ -148,6 +148,9 @@ var RedisBlpopPoolClient = (function () {
     };
     RedisBlpopPoolClient.prototype.rotateKeys = function (index) {
         if (index === void 0) { index = 0; }
+        if (this._keys.length < 1) {
+            return;
+        }
         this._keys.push(this._keys.splice(index, 1)[0]);
         this._callbacks.push(this._callbacks.splice(index, 1)[0]);
     };
